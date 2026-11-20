@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         xspamblock
 // @namespace    https://github.com/kingbluetooth/xspamblock
-// @version      1.0.5
+// @version      1.0.6
 // @description  Hide posts, replies and profiles of X accounts on shared AI-reply blocklists.
 // @author       kingbluetooth
 // @license      MIT
@@ -116,7 +116,7 @@
       const me = pathHandle();
       const btn = document.getElementById('xsb-show');
       if (listed(me)) {
-        col.setAttribute('data-xsb-note', `@${me} is on an AI-reply blocklist. Hidden by xspamblock.`);
+        col.setAttribute('data-xsb-note', `@${me} is hidden by xspamblock.`);
         if (btn?.textContent !== `Show @${me}`) {
           btn?.remove();
           const b = Object.assign(document.createElement('button'), { id: 'xsb-show', textContent: `Show @${me}` });
@@ -167,10 +167,12 @@
     const item = proto.cloneNode(true);          // copies X's own look, none of its handlers
     item.querySelectorAll('svg').forEach(s => s.remove());
     item.removeAttribute('data-testid');
+    [item, ...item.querySelectorAll('[href]')].forEach(a => a.removeAttribute('href'));   // the copy must never be a link
     const label = [...item.querySelectorAll('span')].find(s => !s.firstElementChild && s.textContent.trim());
     if (!label) return;
     label.textContent = `Flag @${handle} as spam`;
     item.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
       flag(handle);
       (document.activeElement || document).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
