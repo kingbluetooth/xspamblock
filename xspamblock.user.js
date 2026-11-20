@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         xspamblock
 // @namespace    https://github.com/kingbluetooth/xspamblock
-// @version      1.0.6
+// @version      1.0.7
 // @description  Hide posts, replies and profiles of X accounts on shared AI-reply blocklists.
 // @author       kingbluetooth
 // @license      MIT
@@ -91,7 +91,7 @@
       if (m) return m[1].toLowerCase();
     }
   };
-  const listed = h => !!h && names.has(h);
+  const listed = h => names.has(h);
   const authorOf = tweet => handleIn(tweet, '[data-testid="User-Name"] a');
   const pathHandle = () => {
     const h = PROFILE.exec(location.pathname)?.[1].toLowerCase();
@@ -175,9 +175,17 @@
       e.preventDefault();
       e.stopPropagation();
       flag(handle);
-      (document.activeElement || document).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      closeMenu();
     }, true);
     proto.parentElement.appendChild(item);
+  }
+
+  // X closes a menu when its backdrop is clicked. The backdrop is a window-sized layer in #layers, so it is
+  // what sits at the window's corner while a menu is open. Never clicks anything else.
+  function closeMenu() {
+    const el = document.elementFromPoint(5, 5);
+    const b = el?.closest('#layers') && el.getBoundingClientRect();
+    if (b && b.width >= innerWidth * 0.9 && b.height >= innerHeight * 0.9) el.click();
   }
 
   function flag(handle) {
