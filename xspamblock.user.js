@@ -1,8 +1,12 @@
 // ==UserScript==
 // @name         xspamblock
+// @namespace    https://github.com/kingbluetooth/xspamblock
+// @version      1.0.2
 // @description  Hide posts, replies and profiles of X accounts on shared AI-reply blocklists. Flag more from the ··· menu.
-// @version      1.0.1
+// @author       kingbluetooth
 // @license      MIT
+// @homepageURL  https://github.com/kingbluetooth/xspamblock
+// @supportURL   https://github.com/kingbluetooth/xspamblock
 // @match        https://x.com/*
 // @run-at       document-start
 // @noframes
