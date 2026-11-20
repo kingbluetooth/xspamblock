@@ -27,7 +27,6 @@ A JavaScript userscript for x.com that hides posts, replies and profiles of acco
 - Matches handles, so renamed accounts are missed until a list updates.
 - Breaks if X changes its page markup.
 - Browsers only, not the native X apps.
-- This repository takes no reports, lists or issues.
 
 ## Disclaimer
 
