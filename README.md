@@ -19,7 +19,7 @@ Or install from [Greasy Fork](https://greasyfork.org/en/scripts/606498-xspambloc
 
 1. Each time X loads, the script detects changes and updates a local list cache.
 2. It hides posts, replies, profiles and suggestions from any listed handle.
-3. The `···` menu on a post or profile gets a "Flag" item, which hides that account on your device only. Un-hiding and adding lists are in the userscript manager menu.
+3. The `···` menu on a post or profile gets a "Flag" item, which hides that account on your device only. A hidden profile has a "Show" button. Toggling a handle is in the userscript manager menu.
 
 ## Sources
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         xspamblock
 // @namespace    https://github.com/kingbluetooth/xspamblock
-// @version      1.0.4
+// @version      1.0.5
 // @description  Hide posts, replies and profiles of X accounts on shared AI-reply blocklists.
 // @author       kingbluetooth
 // @license      MIT
@@ -18,17 +18,15 @@
 // @grant        GM_setValue
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
-// @grant        GM_setClipboard
 // @connect      blockedforaireply.levels.io
 // @connect      clankwall.vogel.dev
-// @connect      *
 // ==/UserScript==
 
 (() => {
   'use strict';
 
-  // A list is any plain-text URL: one handle per line, '#' starts a comment.
-  const DEFAULT_LISTS = [
+  // Plain-text lists: one handle per line, '#' starts a comment.
+  const LISTS = [
     'https://blockedforaireply.levels.io/api/usernames.txt',
     'https://clankwall.vogel.dev/api/usernames.txt',
   ];
@@ -42,17 +40,15 @@
   const ITEMS = 'article[data-testid="tweet"], [data-testid="UserCell"]';
 
   // ── state ──────────────────────────────────────────────────────────────
-  const lists = () => GM_getValue('lists', DEFAULT_LISTS);
   const mine = () => GM_getValue('mine', []);     // handles I flagged
   const allow = () => GM_getValue('allow', []);   // handles I un-hid; beats every list
   const cache = () => GM_getValue('cache', {});   // url → { names, etag }
-  const toggle = (arr, x) => (arr.includes(x) ? arr.filter(y => y !== x) : [...arr, x]);
 
   let names = new Set();
 
   function rebuild() {
     const c = cache();
-    names = new Set([...lists().flatMap(u => c[u]?.names ?? []), ...mine()]);
+    names = new Set([...LISTS.flatMap(u => c[u]?.names ?? []), ...mine()]);
     for (const h of allow()) names.delete(h);
     scan();
   }
@@ -73,7 +69,7 @@
   async function refresh() {
     const c = cache();
     let changed = false;
-    for (const url of lists()) {
+    for (const url of LISTS) {
       try {
         const r = await download(url, c[url]?.etag);      // null when offline
         if (r?.status !== 200) continue;
@@ -113,13 +109,36 @@
       box.toggleAttribute('data-xsb', hit);
     }
 
-    // A listed profile (or one of its post pages): replace the column with a note.
+    // A listed profile (or one of its post pages): replace the column with a note
+    // (CSS text, so it shows even if the button below fails) and a "Show" button.
     const col = document.querySelector('[data-testid="primaryColumn"]');
     if (col) {
       const me = pathHandle();
-      if (listed(me)) col.setAttribute('data-xsb-note', `@${me} is on an AI-reply blocklist. Hidden by xspamblock.`);
-      else col.removeAttribute('data-xsb-note');
+      const btn = document.getElementById('xsb-show');
+      if (listed(me)) {
+        col.setAttribute('data-xsb-note', `@${me} is on an AI-reply blocklist. Hidden by xspamblock.`);
+        if (btn?.textContent !== `Show @${me}`) {
+          btn?.remove();
+          const b = Object.assign(document.createElement('button'), { id: 'xsb-show', textContent: `Show @${me}` });
+          b.addEventListener('click', () => flip(me));
+          col.append(b);
+        }
+      } else {
+        col.removeAttribute('data-xsb-note');
+        btn?.remove();
+      }
     }
+  }
+
+  // Flip a handle between hidden and shown (via `allow`), and say which way it went.
+  function flip(h) {
+    const set = shown => {
+      GM_setValue('allow', [...allow().filter(x => x !== h), ...(shown ? [h] : [])]);
+      rebuild();
+    };
+    const shown = !allow().includes(h);
+    set(shown);
+    toast(`${listed(h) ? 'Hiding' : 'Showing'} @${h}`, 'Undo', () => set(!shown));
   }
 
   // ── flag from the ··· menu ─────────────────────────────────────────────
@@ -150,7 +169,7 @@
     item.removeAttribute('data-testid');
     const label = [...item.querySelectorAll('span')].find(s => !s.firstElementChild && s.textContent.trim());
     if (!label) return;
-    label.textContent = `Flag @${handle} as AI-reply spam`;
+    label.textContent = `Flag @${handle} as spam`;
     item.addEventListener('click', e => {
       e.stopPropagation();
       flag(handle);
@@ -170,37 +189,24 @@
     document.getElementById('xsb-toast')?.remove();
     const t = Object.assign(document.createElement('div'), { id: 'xsb-toast', textContent: text });
     const b = Object.assign(document.createElement('button'), { textContent: action });
-    b.onclick = () => { onAction(); t.remove(); };
+    b.addEventListener('click', () => { onAction(); t.remove(); });
     t.append(b);
     document.body.append(t);
     setTimeout(() => t.remove(), 6000);
   }
 
   // ── menu commands (the userscript manager's icon menu) ─────────────────
-  GM_registerMenuCommand('Add / remove a list URL…', () => {
-    const url = (prompt('List URL to add (or to remove, if already subscribed):\nPlain text, one handle per line.') || '').trim();
-    if (!/^https:\/\//.test(url)) return;
-    GM_setValue('lists', toggle(lists(), url));
-    refresh();
-  });
-
-  GM_registerMenuCommand('Un-hide / re-hide a handle…', () => {
-    const h = (prompt('Handle to stop hiding (enter it again to hide it again):') || '').trim().replace(/^@/, '').toLowerCase();
-    if (!HANDLE.test(h)) return;
-    GM_setValue('allow', toggle(allow(), h));
-    rebuild();
-  });
-
-  GM_registerMenuCommand('Copy my flags (to share)', () => {
-    GM_setClipboard(mine().join('\n'));
-    alert(`${mine().length} flagged handle(s) copied.\nPaste them into a Gist to share them.`);
+  GM_registerMenuCommand('Toggle hide for a handle…', () => {
+    const h = (prompt('Handle to toggle between hidden and shown:') || '').trim().replace(/^@/, '').toLowerCase();
+    if (HANDLE.test(h)) flip(h);
   });
 
   // ── go ─────────────────────────────────────────────────────────────────
   GM_addStyle(`
     [data-xsb]{display:none!important}
-    [data-xsb-note]>*{display:none!important}
-    [data-xsb-note]::before{content:attr(data-xsb-note);display:block;padding:32px 16px;color:#71767b;font:15px/1.4 system-ui,sans-serif}
+    [data-xsb-note]>:not(#xsb-show){display:none!important}
+    [data-xsb-note]::before{content:attr(data-xsb-note);display:block;padding:32px 16px 16px;color:#71767b;font:15px/1.4 system-ui,sans-serif}
+    #xsb-show{display:block;align-self:flex-start;margin:0 16px;padding:8px 16px;border:1px solid #1d9bf0;border-radius:9999px;background:none;color:#1d9bf0;font:700 14px system-ui,sans-serif;cursor:pointer}
     #xsb-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#1d9bf0;color:#fff;font:14px system-ui,sans-serif}
     #xsb-toast button{margin-left:12px;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
   `);
