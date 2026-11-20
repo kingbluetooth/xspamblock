@@ -13,6 +13,8 @@ Your account blocklist remains unchanged.
 1. Install a userscript manager (a browser extension that runs userscripts): [Violentmonkey](https://violentmonkey.github.io/get-it/) or [Tampermonkey](https://www.tampermonkey.net/).
 2. Click [![Install userscript](https://img.shields.io/badge/install-userscript-2ea44f)](https://raw.githubusercontent.com/kingbluetooth/xspamblock/main/xspamblock.user.js) and confirm.
 
+Or install from [Greasy Fork](https://greasyfork.org/en/scripts/606498-xspamblock).
+
 ## How it works
 
 1. Each time X loads, the script detects changes and updates a local list cache.
