@@ -4,7 +4,9 @@
 
 [![Userscript](https://img.shields.io/badge/userscript-Violentmonkey%20%7C%20Tampermonkey-blue)](#install)
 
-A JavaScript userscript for x.com that hides posts, replies and profiles of accounts from community blocklists ([Blocked for AI Reply](https://blockedforaireply.levels.io/), [Clankwall](https://clankwall.vogel.dev/)). Your account blocklist remains unchanged.
+A JavaScript userscript for x.com that hides posts, replies and profiles of accounts from community blocklists ([Blocked for AI Reply](https://blockedforaireply.levels.io/), [Clankwall](https://clankwall.vogel.dev/)). 
+
+Your account blocklist remains unchanged.
 
 ## Install
 
